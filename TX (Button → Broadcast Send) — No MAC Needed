@@ -1,0 +1,51 @@
+#include <WiFi.h>
+#include <esp_now.h>
+
+const int BTN1 = 3;
+const int BTN2 = 4;
+
+// Broadcast MAC (special address)
+uint8_t broadcastMac[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+
+void onSent(const wifi_tx_info_t *tx_info, esp_now_send_status_t status) {
+  Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Sent OK" : "Failed");
+}
+
+void setup() {
+  Serial.begin(115200);
+
+  pinMode(BTN1, INPUT_PULLUP);
+  pinMode(BTN2, INPUT_PULLUP);
+
+  WiFi.mode(WIFI_STA);
+
+  if (esp_now_init() != ESP_OK) {
+    Serial.println("ESP-NOW init failed!");
+    return;
+  }
+
+  esp_now_register_send_cb(onSent);
+
+  esp_now_peer_info_t peerInfo = {};
+  memcpy(peerInfo.peer_addr, broadcastMac, 6);
+  peerInfo.channel = 0;
+  peerInfo.encrypt = false;
+
+  esp_now_add_peer(&peerInfo);
+
+  Serial.println("TX READY (Broadcast Mode)");
+}
+
+void loop() {
+  if (digitalRead(BTN1) == LOW) {
+    const char* msg = "BTN1";
+    esp_now_send(broadcastMac, (uint8_t*)msg, strlen(msg));
+    delay(250);
+  }
+
+  if (digitalRead(BTN2) == LOW) {
+    const char* msg = "BTN2";
+    esp_now_send(broadcastMac, (uint8_t*)msg, strlen(msg));
+    delay(250);
+  }
+}
