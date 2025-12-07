@@ -1,0 +1,45 @@
+#include <WiFi.h>
+#include <esp_now.h>
+
+const int LED1 = 5;
+const int LED2 = 6;
+
+void onReceive(const esp_now_recv_info *info, const uint8_t *data, int len) {
+  String msg = String((char*)data).substring(0, len);
+
+  Serial.print("Received: ");
+  Serial.println(msg);
+
+  if (msg == "BTN1") {
+    digitalWrite(LED1, HIGH);
+    delay(200);
+    digitalWrite(LED1, LOW);
+  }
+
+  if (msg == "BTN2") {
+    digitalWrite(LED2, HIGH);
+    delay(200);
+    digitalWrite(LED2, LOW);
+  }
+}
+
+void setup() {
+  Serial.begin(115200);
+
+  pinMode(LED1, OUTPUT);
+  pinMode(LED2, OUTPUT);
+
+  WiFi.mode(WIFI_STA);
+
+  if (esp_now_init() != ESP_OK) {
+    Serial.println("ESP-NOW init failed!");
+    return;
+  }
+
+  esp_now_register_recv_cb(onReceive);
+
+  Serial.println("RX READY (Broadcast Mode)");
+}
+
+void loop() {
+}
